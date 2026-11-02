@@ -47,7 +47,7 @@ O script gera o arquivo `results/relatorio_calculo_numerico.json` com todos os r
 
 - Ruggiero, M. A. G., & Lopes, V. L. R. *Cálculo Numérico — Aspectos Teóricos e Computacionais*.
 - Burden, R. L., & Faires, J. D. *Análise Numérica*.
-- [Notas de aula da disciplina LES710C](inserido pelo professor na plataforma Amadeus).
+- [Notas de aula da disciplina LES710C](inserido pelo professor na plataforma).
 
 ---
 
