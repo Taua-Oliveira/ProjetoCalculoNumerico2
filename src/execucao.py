@@ -2,7 +2,7 @@
 Execução: liga o caso escolhido ao seu método e devolve o Resultado.
 
 Cálculo Numérico — UNIVASF 2026.2 — Projeto Unidade 2
-Responsável: (a definir — a divisão de tarefas será fechada em grupo)
+Responsável: Giovanni Éber, Tauã Oliveira
 
 Os módulos de método não são conhecidos diretamente: cada um é procurado
 pelo campo "tipo" do caso, na tabela SOLVERS. Assim, o núcleo do programa
