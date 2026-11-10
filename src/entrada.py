@@ -2,49 +2,35 @@
 Entrada de dados: transforma o que o usuário digita em algo que os
 métodos conseguem usar, sem deixar o programa quebrar com entrada inválida.
 
-Cálculo Numérico — UNIVASF 2026.2 — Projeto Unidade 2
-Responsável: Giovanni Éber, Tauã Oliveira
+Todas as funções CONVERSAM com o usuário: perguntam, validam e perguntam
+de novo até a resposta ser válida. Os métodos numéricos não chamam nada daqui.
 
-Contém dois tipos de função:
-    ler_float, ler_int  -> CONVERSAM com o usuário: perguntam, validam e
-                           perguntam de novo até a resposta ser válida
-                           (vindas do Projeto 1, sem mudanças).
-    ler_vetor,          -> CONVERTEM texto em sequências de números:
-    ler_matriz             vetores (ex.: larguras do navio) e matrizes
-                           (ex.: coeficientes dos sistemas lineares).
-
-Não foram trazidas do Projeto 1: ler_funcao e montar_caso_personalizado
-(este projeto não usa funções simbólicas; o caso personalizado pode ser
-revisitado depois, junto do casos.py).
+Convenções (iguais às do projeto 1):
+    - vírgula decimal é aceita ("0,5" -> 0.5);
+    - notação científica é aceita ("1e-4");
+    - Enter vazio usa o valor padrão, quando existe.
+    - para digitar VÁRIOS números numa linha, separe com ESPAÇO ou ";"
+      (a vírgula é reservada para o decimal).
 """
 
 import math
 
 
 def ler_float(mensagem: str, padrao: float | None = None) -> float:
-    """
-    Pergunta um número ao usuário até ele digitar algo válido.
+    """Pergunta um número ao usuário até ele digitar algo válido."""
+    while True:
+        leitura = input(mensagem).strip()
 
-    - Aceitar vírgula como separador decimal ("0,5" -> 0.5).
-    - Aceitar notação científica ("1e-6").
-    - Se padrao não for None e o usuário só apertar Enter, usar o padrão.
-    """
-    while True:  # repete até o usuário digitar algo válido
-        leitura = input(mensagem).strip()  # lê o texto e tira espaços das pontas
-
-        # Enter sem digitar nada: usa o valor padrão, se existir
         if leitura == "" and padrao is not None:
             return padrao
 
-        leitura = leitura.replace(",", ".")  # aceita "0,5" como 0.5
-
+        leitura = leitura.replace(",", ".")
         try:
-            valor = float(leitura)  # tenta converter o texto em número
+            valor = float(leitura)
         except ValueError:
-            print("  Valor inválido. Digite um número, ex.: 0,5 ou 1e-6")
-            continue  # volta para o início do while e pergunta de novo
+            print("  Valor inválido. Digite um número, ex.: 0,5 ou 1e-4")
+            continue
 
-        # float() aceita "inf" e "nan", que não servem para os métodos
         if not math.isfinite(valor):
             print("  Digite um número finito.")
             continue
@@ -52,111 +38,117 @@ def ler_float(mensagem: str, padrao: float | None = None) -> float:
         return valor
 
 
-def ler_int(mensagem: str, padrao: int | None = None) -> int:
-    """Igual ao ler_float, mas para inteiros positivos (ex.: max_iter)."""
-    while True:  # repete até o usuário digitar algo válido
-        leitura = input(mensagem).strip()  # lê o texto e tira espaços das pontas
+def ler_int(mensagem: str, padrao: int | None = None, minimo: int = 1) -> int:
+    """Pergunta um inteiro (>= minimo) ao usuário até ele digitar algo válido."""
+    while True:
+        leitura = input(mensagem).strip()
 
-        # Enter sem digitar nada: usa o valor padrão, se existir
         if leitura == "" and padrao is not None:
             return padrao
 
         try:
-            valor = int(leitura)  # tenta converter o texto em número inteiro
+            valor = int(leitura)
         except ValueError:
             print("  Valor inválido. Digite um número inteiro.")
-            continue  # volta para o início do while e pergunta de novo
+            continue
 
-        # Não faz sentido rodar 0 ou um número negativo de iterações
-        if valor <= 0:
-            print("  Valor inválido. Digite um número inteiro maior que 0.")
+        if valor < minimo:
+            print(f"  Valor inválido. Digite um inteiro maior ou igual a {minimo}.")
             continue
 
         return valor
 
 
-def _texto_para_float(leitura: str) -> float:
-    """Converte UM texto ('2,5' ou '1e-6') em float; lança ValueError se não der."""
-    valor = float(leitura.replace(",", "."))  # aceita vírgula decimal
-    if not math.isfinite(valor):
-        raise ValueError("inf/nan não são aceitos")
-    return valor
+def ler_sim_nao(mensagem: str, padrao: bool | None = None) -> bool:
+    """Pergunta s/n. Enter usa o padrão, se existir."""
+    while True:
+        leitura = input(mensagem).strip().lower()
+        if leitura == "" and padrao is not None:
+            return padrao
+        if leitura in ("s", "sim"):
+            return True
+        if leitura in ("n", "nao", "não"):
+            return False
+        print("  Responda com s ou n.")
 
 
-def ler_vetor(mensagem: str, tamanho: int | None = None) -> list[float]:
+def ler_lista(mensagem: str, quantidade: int) -> list[float]:
     """
-    Pergunta uma sequência de números e devolve uma lista de floats.
-
-    Como digitar: valores separados por ESPAÇO, tudo em uma linha
-    (a vírgula é tratada como separador decimal, não como separador).
-        Exemplo:  3 2,92 2,75 2,52
-
-    tamanho: se informado, exige exatamente essa quantidade de valores;
-    sem informar, aceita qualquer quantidade a partir de 1.
-    Repete a pergunta até a resposta ser válida.
+    Lê `quantidade` números numa única linha, separados por espaço ou ";".
+    Repete a pergunta se faltar ou sobrar número, ou se algum for inválido.
     """
     while True:
-        leitura = input(mensagem).strip()
+        partes = input(mensagem).replace(";", " ").split()
 
-        if leitura == "":
-            print("  Digite pelo menos um número. Exemplo: 3 2,92 2,75")
+        if len(partes) != quantidade:
+            print(f"  Digite exatamente {quantidade} números (você digitou {len(partes)}).")
             continue
 
-        partes = leitura.split()  # separa pelos espaços
         try:
-            valores = [_texto_para_float(parte) for parte in partes]
+            valores = [float(p.replace(",", ".")) for p in partes]
         except ValueError:
-            print("  Valor inválido na sequência. Exemplo: 3 2,92 2,75")
+            print("  Algum valor é inválido. Use números, ex.: 4 3 2,5")
             continue
 
-        if tamanho is not None and len(valores) != tamanho:
-            print(f"  Preciso de exatamente {tamanho} valores, você digitou {len(valores)}.")
+        if not all(math.isfinite(v) for v in valores):
+            print("  Digite apenas números finitos.")
             continue
 
         return valores
 
 
-def ler_matriz(mensagem: str, formato: tuple[int, int] | None = None) -> list[list[float]]:
+def ler_vetor(n: int, nome: str = "b") -> list[float]:
+    """Lê um vetor de n números (uma linha)."""
+    return ler_lista(f"Vetor {nome} ({n} valores): ", n)
+
+
+def ler_matriz(n: int, nome: str = "A") -> list[list[float]]:
+    """Lê uma matriz quadrada n x n, uma linha por vez."""
+    print(f"Matriz {nome} ({n}x{n}), uma linha por vez:")
+    return [ler_lista(f"  linha {i + 1}: ", n) for i in range(n)]
+
+
+def ler_sistema() -> tuple[list[list[float]], list[float]]:
     """
-    Pergunta uma matriz e devolve como lista de listas de floats
-    (a multiplicação por np.asarray fica a cargo de quem for usar).
-
-    Como digitar: linhas separadas por ';' e valores separados por ESPAÇO,
-    tudo em uma linha (a vírgula é tratada como separador decimal):
-        Exemplo:  4 3 2; 1 3 1; 2 1 3
-
-    formato: se informado como (linhas, colunas), exige essa dimensão.
-    Repete a pergunta até a resposta ser válida.
+    Lê um sistema linear completo A·x = b (usado nos Tópicos 1 e 2).
+    Devolve (A, b). Mostra o sistema e pede confirmação antes de devolver.
     """
     while True:
-        leitura = input(mensagem).strip()
+        n = ler_int("Número de incógnitas (n): ", minimo=1)
+        A = ler_matriz(n)
+        b = ler_vetor(n)
 
-        if leitura == "":
-            print("  Digite a matriz. Exemplo: 4 3 2; 1 3 1; 2 1 3")
-            continue
+        print("\nSistema lido:")
+        for i in range(n):
+            print("  " + "  ".join(f"{A[i][j]:>10g}" for j in range(n)) + f"  |  {b[i]:>10g}")
+        if ler_sim_nao("Está correto? (s/n): "):
+            return A, b
 
-        # Cada linha da matriz é um trecho entre ';'
-        linhas_texto = [linha.strip() for linha in leitura.split(";") if linha.strip() != ""]
 
-        try:
-            matriz = [[_texto_para_float(valor) for valor in linha.split()]
-                      for linha in linhas_texto]
-        except ValueError:
-            print("  Valor inválido na matriz. Use ';' entre linhas e espaço entre números.")
-            continue
+def ler_pontos(minimo: int = 2) -> tuple[list[float], list[float]]:
+    """
+    Lê uma tabela de pontos (x, y), um ponto por linha (Tópico 3).
+    Devolve (xs, ys).
+    """
+    n = ler_int(f"Quantidade de pontos (mínimo {minimo}): ", minimo=minimo)
+    xs: list[float] = []
+    ys: list[float] = []
+    for i in range(n):
+        x, y = ler_lista(f"  ponto {i + 1} (x y): ", 2)
+        xs.append(x)
+        ys.append(y)
+    return xs, ys
 
-        if len(matriz) == 0:
-            print("  A matriz precisa ter pelo menos uma linha.")
-            continue
 
-        quantos_por_linha = {len(linha) for linha in matriz}
-        if len(quantos_por_linha) != 1:
-            print("  Todas as linhas precisam ter a mesma quantidade de números.")
-            continue
-
-        n_linhas, n_colunas = len(matriz), len(matriz[0])
-        if formato is not None and (n_linhas, n_colunas) != formato:
-            print(f"  Esperava uma matriz {formato[0]}x{formato[1]}, recebi {n_linhas}x{n_colunas}.")
-            continue
-
-        return matriz
+def ler_valores_igualmente_espacados() -> tuple[float, list[float]]:
+    """
+    Lê h (espaçamento) e os valores y0..yn (Tópico 4).
+    Devolve (h, ys).
+    """
+    h = ler_float("Espaçamento h entre os pontos: ")
+    while h <= 0:
+        print("  h precisa ser maior que zero.")
+        h = ler_float("Espaçamento h entre os pontos: ")
+    n_pontos = ler_int("Quantidade de pontos (mínimo 2): ", minimo=2)
+    ys = ler_lista(f"Os {n_pontos} valores de y, na ordem: ", n_pontos)
+    return h, ys
