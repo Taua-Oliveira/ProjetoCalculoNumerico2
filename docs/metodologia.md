@@ -1,69 +1,102 @@
 # Metodologia — Métodos Numéricos Aplicados
 
-## 1. Sistemas Lineares — Métodos Diretos (Tópico 1)
+Todos os métodos estão implementados à mão em [`src/metodos/`](../src/metodos/), um arquivo por tópico. O `numpy` só guarda os vetores e as matrizes.
 
-### Método utilizado: Decomposição LU
+---
 
-A decomposição LU fatora a matriz de coeficientes **A** em dois fatores:
+## 1. Sistemas lineares — métodos diretos (Tópico 1, Problema 1)
 
-$$A = LU$$
+### Modelagem
 
-onde **L** é triangular inferior com 1s na diagonal e **U** é triangular superior. A solução do sistema **Ax = b** se reduz a resolver dois sistemas triangulares:
+Incógnitas: $x_1$ = transistores, $x_2$ = resistores, $x_3$ = chips. Cada equação diz que o consumo total de um material é igual à quantidade disponível:
 
 $$
-egin{cases}
-Ly = Pb \ 
-Ux = y
+\begin{cases}
+4x_1 + 3x_2 + 2x_3 = 960 & \text{(cobre)}\\
+1x_1 + 3x_2 + 1x_3 = 510 & \text{(zinco)}\\
+2x_1 + 1x_2 + 3x_3 = 610 & \text{(vidro)}
 \end{cases}
 $$
 
-O pivoteamento parcial (**P**) garante estabilidade numérica evitando divisão por zero ou por valores muito pequenos.
+### Decomposição LU com pivoteamento parcial
 
-**Aplicação no problema T1.P1:** O sistema modela o balanço de materiais (cobre, zinco, vidro) para produzir transistores, resistores e chips. A matriz é bem condicionada e a solução é exata (residual ≈ 0).
+A matriz é fatorada como $PA = LU$, onde $L$ é triangular inferior com diagonal unitária (guarda os multiplicadores $m_{ik} = u_{ik}/u_{kk}$) e $U$ é triangular superior. Em cada etapa $k$, a linha com maior $|a_{ik}|$ é trazida para a posição de pivô. Depois resolvem-se dois sistemas triangulares:
 
----
+$$
+Ly = Pb \quad \text{(substituição progressiva)}, \qquad Ux = y \quad \text{(substituição retroativa)}
+$$
 
-## 2. Sistemas Lineares — Métodos Iterativos (Tópico 2)
-
-### Método utilizado: Gauss-Seidel com critério de Sassenfeld
-
-O método de Gauss-Seidel atualiza iterativamente cada componente da solução usando os valores mais recentes já calculados na mesma iteração:
-
-$$x_i^{(k+1)} = \dfrac{1}{a_{ii}}\left(b_i - \sum_{j=1}^{i-1} a_{ij}x_j^{(k+1)} - \sum_{j=i+1}^{n} a_{ij}x_j^{(k)}ight)$$
-
-O **critério de Sassenfeld** garante convergência:
-
-$$eta_i = \dfrac{1}{|a_{ii}|}\left(\sum_{j=1}^{i-1}|a_{ij}|eta_j + \sum_{j=i+1}^{n}|a_{ij}|ight) < 1, \quad orall i$$
-
-**Aplicação no problema T2.P1:** A ponte de Wheatstone gera um sistema 2×2 para os potenciais nos nós B e C. O critério de Sassenfeld é satisfeito e o método converge em 5 iterações.
+**Resultado:** $x = (120,\ 100,\ 90)$, com resíduo $\|Ax-b\|_\infty = 0$.
 
 ---
 
-## 3. Ajuste de Curvas — Mínimos Quadrados (Tópico 3)
+## 2. Sistemas lineares — métodos iterativos (Tópico 2, Problema 1)
 
-### Modelos ajustados
+### Modelagem da Ponte de Wheatstone
 
-| Modelo | Transformação | Sistema |
-|--------|--------------|---------|
-| **Reta** | $y = a + bx$ | $egin{bmatrix}n & \Sigma x\ \Sigma x & \Sigma x^2\end{bmatrix}egin{bmatrix}a\b\end{bmatrix}=egin{bmatrix}\Sigma y\\Sigma xy\end{bmatrix}$ |
-| **Parábola** | $y = a + bx + cx^2$ | Sistema 3×3 com $\Sigma x^3$, $\Sigma x^4$ |
-| **Exponencial** | $y = ae^{bx} 	o \ln y = \ln a + bx$ | Linearização via logaritmo |
+A fonte $E$ fica entre os nós A (potencial $E$) e D (potencial 0). Aplicando a lei dos nós de Kirchhoff em B e C:
 
-O **erro quadrático** $\sum (y_i - \hat{y}_i)^2$ seleciona o melhor modelo (parábola, neste caso).
+$$
+\begin{cases}
+\left(\dfrac{1}{R_1}+\dfrac{1}{R_4}+\dfrac{1}{R_5}\right)V_B - \dfrac{1}{R_5}V_C = \dfrac{E}{R_1}\\[2mm]
+-\dfrac{1}{R_5}V_B + \left(\dfrac{1}{R_2}+\dfrac{1}{R_3}+\dfrac{1}{R_5}\right)V_C = \dfrac{E}{R_2}
+\end{cases}
+$$
+
+As correntes saem da lei de Ohm: $I_1 = (E-V_B)/R_1$, $I_2 = (E-V_C)/R_2$, $I_3 = V_C/R_3$, $I_4 = V_B/R_4$, $I_5 = (V_B-V_C)/R_5$ e $I_6 = I_1 + I_2$.
+
+### Método de Gauss-Seidel
+
+$$
+x_i^{(k+1)} = \frac{1}{a_{ii}}\left(b_i - \sum_{j<i} a_{ij}x_j^{(k+1)} - \sum_{j>i} a_{ij}x_j^{(k)}\right)
+$$
+
+- **Aproximação inicial:** $x_i^{(0)} = b_i / a_{ii}$.
+- **Critério de parada:** $\dfrac{\max_i |x_i^{(k+1)} - x_i^{(k)}|}{\max_i |x_i^{(k+1)}|} < \varepsilon$, com $\varepsilon = 10^{-4}$.
+- **Convergência (critério de Sassenfeld):** $\beta_i = \dfrac{1}{|a_{ii}|}\left(\sum_{j<i}|a_{ij}|\beta_j + \sum_{j>i}|a_{ij}|\right)$. Se $\max\beta_i < 1$, a convergência é garantida.
+
+**Resultado** ($E = 30$ V, $R_1 = 20\ \Omega$, demais $= 120\ \Omega$): $\beta = (0{,}125;\ 0{,}042)$, convergência em 4 iterações, $V_B \approx 24{,}7825$ V, $V_C \approx 18{,}2608$ V, $I_1 \approx 0{,}2609$ A, $I_2 \approx 0{,}0978$ A, $I_3 \approx 0{,}1522$ A, $I_4 \approx 0{,}2065$ A, $I_5 \approx 0{,}0543$ A e $I_6 \approx 0{,}3587$ A.
 
 ---
 
-## 4. Integração Numérica (Tópico 4)
+## 3. Ajuste de curvas — mínimos quadrados (Tópico 3, Problema 3)
 
-### Regras compostas
+Minimiza-se $\sum [F(x_i) - G(x_i)]^2$ resolvendo as **equações normais** (por LU):
 
-| Método | Fórmula |
-|--------|----------|
-| **Trapézio** | $\int_a^b f(x)dx pprox \dfrac{h}{2}\left[y_0 + 2\sum_{i=1}^{n-1} y_i + y_night]$ |
-| **Simpson** | $\int_a^b f(x)dx pprox \dfrac{h}{3}\left[y_0 + 4\sum_{	ext{ímpares}} y_i + 2\sum_{	ext{pares}} y_i + y_night]$ (n par) |
+| Modelo | Forma | Equações normais |
+|---|---|---|
+| Reta | $G(x) = a + bx$ | $\begin{bmatrix} n & \sum x \\ \sum x & \sum x^2 \end{bmatrix}\begin{bmatrix} a\\ b\end{bmatrix} = \begin{bmatrix}\sum y\\ \sum xy\end{bmatrix}$ |
+| Parábola | $G(x) = a + bx + cx^2$ | sistema 3×3 com $\sum x^k$ ($k \le 4$) e $\sum x^k y$ ($k \le 2$) |
+| Exponencial | $G(x) = a\,e^{bx}$ | linearização: $\ln y = \ln a + bx$ (reta nos pontos $(x_i, \ln y_i)$) |
 
-Simpson é mais preciso para funções suaves e foi aplicável (n = 6 intervalos, par).
+**Resultados:**
+
+| Ajuste | Função | Erro quadrático |
+|---|---|---|
+| Reta | $15{,}6166 - 1{,}3880x$ | 10,8424 |
+| Parábola | $17{,}2250 - 2{,}4060x + 0{,}0884x^2$ | **2,0850** |
+| Exponencial | $20{,}7710\,e^{-0{,}2357x}$ | 13,9593 |
+
+A parábola tem o menor erro. Na exponencial, o ajuste minimiza o erro em $\ln y$; o erro da tabela foi calculado em $y$ para permitir a comparação.
 
 ---
 
-> **Referências:** Ruggiero & Lopes (2016); Burden & Faires (2016); notas de aula LES710C.
+## 4. Integração numérica (Tópico 4, Problema 3)
+
+A seção vai de A até A7 em 7 subintervalos de $h = 0{,}4$ m, ou seja, **8 pontos**. Em A7 o casco encontra a linha de referência, então $y_7 = 0$:
+
+$$y = (3{,}00;\ 2{,}92;\ 2{,}75;\ 2{,}52;\ 2{,}30;\ 1{,}84;\ 0{,}92;\ 0)$$
+
+| Regra | Fórmula |
+|---|---|
+| Trapézio repetido | $\dfrac{h}{2}\left[y_0 + 2\sum_{i=1}^{n-1} y_i + y_n\right]$ |
+| Simpson 1/3 repetido ($n$ par) | $\dfrac{h}{3}\left[y_0 + 4\sum_{i\ \text{ímpar}} y_i + 2\sum_{i\ \text{par}} y_i + y_n\right]$ |
+| Simpson 3/8 (3 subintervalos) | $\dfrac{3h}{8}\left[y_0 + 3y_1 + 3y_2 + y_3\right]$ |
+
+Como $n = 7$ é ímpar, o Simpson 1/3 não cobre o intervalo inteiro. Por isso aplicamos o **1/3 nos 4 primeiros subintervalos e o 3/8 nos 3 últimos**.
+
+**Resultado:** Trapézio = **5,9000 m²** · Simpson = **5,9283 m²**. Esses valores são a área desenhada na figura (meia seção). A seção completa, por simetria, é o dobro: ≈ 11,80 m² e 11,86 m².
+
+---
+
+> **Referências:** Ruggiero & Lopes, *Cálculo Numérico — Aspectos Teóricos e Computacionais*; Burden & Faires, *Análise Numérica*; notas de aula LES710C.
